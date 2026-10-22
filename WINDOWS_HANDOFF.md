@@ -59,3 +59,15 @@ Build updated installers with npm run build:windows. The app is unsigned; normal
 ## Live validation record
 
 2026-10-22, Windows PC, Minecraft Java 26.3 vanilla: standalone 2.2.0 opened and captured the game, but the height-based tracking CSS shrank the map and small F3 glyphs produced stale or incorrect digits. Version 2.2.1 fills the map panel, uses a sidebar at wide window sizes, defaults to Follow, requests detailed high-resolution capture, increases discovery scaling, tightens row bounds, and rejects OCR below 70 percent confidence. Live capture and the reader preview were checked on the selected game window. At the observed 854 by 480 game rendering size, Block-row OCR confused 9 with 2 at 49 percent confidence. Those readings are now rejected; a full live-game accuracy pass with larger F3 text remains required. Increase Minecraft GUI Scale before relying on the marker. Synthetic browser, automatic OCR and Electron tests cover signed coordinates and tracking. No live RTP, mixed-DPI or exclusive-fullscreen validation is claimed.
+
+
+### Version 2.2.2, small F3 text
+
+The owner rejected increasing GUI Scale. A local bitmap-glyph reader now runs before general OCR, recognizes the native Minecraft coordinate font at integer pixel scales, and checks floored XYZ values against the Block row when both labels are present. A conflicting or damaged pair is withheld. The existing two-reading confirmation and stale timer still apply. General OCR and manual cropping remain available for other fonts. The app no longer asks the owner to change GUI Scale.
+
+Verified live on the selected Minecraft Java 26.3 window with the owner's existing small F3 text: the app reported Reading live, the enlarged preview matched the captured XYZ row, and both rows agreed. The two supplied screenshots were also decoded correctly in local, ignored analysis files; no screenshots or captured coordinate logs are committed. Synthetic checks cover pixel scales 1 through 3, negative fractional floor values, all digits, disagreement, damaged rows, stale status, recovery and Stop. Live movement, owner-driven RTP, mixed DPI and exclusive fullscreen remain outside this pass.
+
+
+### Version 2.2.3, tall windows
+
+Tall windows stack setup, a full-width map, and recent landings vertically. The sidebar remains only in wide windows. This applies before and during tracking; the map no longer shares horizontal space with setup on a portrait monitor. Follow starts off, so new position readings move only the marker. The map recenters only after the owner explicitly enables Follow.

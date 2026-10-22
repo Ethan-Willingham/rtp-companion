@@ -4,14 +4,15 @@ const {parseCoordinates, normalize, Tracker,findCoordinateLine}=RTPCore;
 const desktop=window.rtpDesktop;
 let tracker=new Tracker(), stream=null, worker=null, workerPromise=null, crop=null;
 let running=false, generation=0, timer=null, sampleMode=false, reading=false;
-let mapData=null, regions=null, bitmap=null, follow=true;
+let mapData=null, regions=null, bitmap=null, follow=false;
 let view={x:.5,z:.5,zoom:1}, drag=null, selection=null, selectionStart=null;
 const video=$('capture'), map=$('map'), ctx=map.getContext('2d');
 const shot=document.createElement('canvas'), shotCtx=shot.getContext('2d');
 const ocr=$('ocrPreview'), ocrCtx=ocr.getContext('2d',{willReadFrequently:true});
 let captureSize=null;
-let autoFind=false,unreadable=0;
-$('follow').textContent='Follow: on';
+let autoFind=false,unreadable=0,pixelAutomatic=true;
+const pixelFrame=document.createElement('canvas'),pixelCtx=pixelFrame.getContext('2d',{willReadFrequently:true});
+$('follow').textContent='Follow: off';
 if(desktop){
   $('connect').textContent='Start tracking';$('crop').textContent='Adjust coordinate row';
   document.querySelector('.setup>p').textContent='Open Minecraft Java, show F3 coordinates, then click Start tracking.';
@@ -70,7 +71,7 @@ $('connect').onclick=async()=>{
     stream.getVideoTracks()[0].contentHint='detail';
     video.srcObject=stream; await video.play();
     stream.getVideoTracks()[0].addEventListener('ended',()=>stopCapture('Screen sharing ended. Select the Minecraft window to reconnect.'),{once:true});
-    sampleMode=false; tracker=new Tracker(); updateReadout(); running=true;
+    sampleMode=false; tracker=new Tracker(); updateReadout(); running=true;pixelAutomatic=true;
     $('stop').disabled=false; $('crop').disabled=false;
     badge('Select coordinates'); status('Capture connected. Select just the complete XYZ or Block coordinate row.');
     if(desktop){autoFind=true;captureSize={w:video.videoWidth,h:video.videoHeight};status('Finding the F3 coordinate row automatically...');clearTimeout(timer);timer=setTimeout(readFrame,0);}else openCrop();
@@ -116,7 +117,7 @@ $('cropCanvas').onpointercancel=()=>{selectionStart=null;};
 $('cancelCrop').onclick=()=>$('cropDialog').close();
 $('useCrop').onclick=()=>{
   if (!selection) return;
-  crop={...selection};autoFind=false;unreadable=0;captureSize={w:video.videoWidth,h:video.videoHeight};
+  crop={...selection};pixelAutomatic=false;autoFind=false;unreadable=0;captureSize={w:video.videoWidth,h:video.videoHeight};
   tracker=new Tracker(); updateReadout(); $('cropDialog').close(); status('Starting the coordinate reader...');
 };
 $('cropDialog').addEventListener('close',()=>{
@@ -146,12 +147,28 @@ async function readFrame() {
       if(desktop){autoFind=true;captureSize={w:video.videoWidth,h:video.videoHeight};status('Minecraft changed size. Finding the coordinate row again...');}
       else{badge('Re-select row','stale');status('Minecraft changed size. Select its coordinate row again.');}return;
     }
+    if(desktop&&pixelAutomatic){
+      pixelFrame.width=Math.min(1200,video.videoWidth);pixelFrame.height=Math.min(700,video.videoHeight);
+      pixelCtx.drawImage(video,0,0,pixelFrame.width,pixelFrame.height,0,0,pixelFrame.width,pixelFrame.height);
+      const found=RTPPixelOCR.read(pixelCtx.getImageData(0,0,pixelFrame.width,pixelFrame.height));
+      if(found?.unconfirmed){tracker.read(null,0);status('Waiting for the XYZ and Block rows to agree. Keep F3 visible.');return;}
+      if(found){
+        const b=found.bbox;
+        ocr.width=(b.x1-b.x0)*4;ocr.height=(b.y1-b.y0)*4;
+        ocrCtx.imageSmoothingEnabled=false;ocrCtx.drawImage(pixelFrame,b.x0,b.y0,b.x1-b.x0,b.y1-b.y0,0,0,ocr.width,ocr.height);
+        $('ocrText').textContent=found.text+'\nPixel reader'+(found.paired?': XYZ and Block agree':': exact glyph match');
+        const confirmed=tracker.read(found.position,found.confidence);
+        if(confirmed){sampleMode=false;document.body.classList.add('tracking');updateReadout();if(follow)centerOnPlayer();draw();}
+        status(confirmed?'Reading visible coordinates locally with the pixel reader.':'Pixel coordinate row found. Confirming your position...');
+        return;
+      }
+    }
     const w=await initWorker();
     if (!running || token!==generation || $('cropDialog').open) return;
     if(autoFind){
       const {found,scale}=await discoverRow(w);
       if(!running||token!==generation||$('cropDialog').open)return;
-      if(!found||found.confidence<70){status('Show F3 and increase Minecraft GUI Scale if its text is small. Looking for a clear XYZ or Block row...');return;}
+      if(!found||found.confidence<70){status('Looking for the visible XYZ or Block row. Keep F3 visible, or use Adjust coordinate row.');return;}
       $('ocrText').textContent=found.text;
       if(found.bbox){
         const b=found.bbox,x=Math.max(0,Math.floor(b.x0/scale)-6),y=Math.max(0,Math.floor(b.y0/scale)-1);
@@ -190,7 +207,7 @@ async function readFrame() {
       status(result.landing&&result.jump ? 'Large coordinate jump confirmed. Your map marker has moved.' : 'Reading visible coordinates locally. Keep the selected row visible.');
       if (follow) centerOnPlayer();draw();
     } else if (!p || confidence<45) {
-      status('Coordinate text is too small or unclear. Increase Minecraft GUI Scale, keep F3 visible, or use Adjust coordinate row.');
+      status('Coordinate row not confirmed. Keep F3 visible, or use Adjust coordinate row.');
       if(desktop&&++unreadable>=4){crop=null;autoFind=true;unreadable=0;tracker.pending=null;}
     }
     else status('Confirming coordinates with another reading...');

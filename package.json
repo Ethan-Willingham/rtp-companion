@@ -1,6 +1,6 @@
 {
   "name": "donut-rtp-companion",
-  "version": "2.2.1",
+  "version": "2.2.3",
   "description": "Local screen-only Minecraft coordinate reader and DonutSMP RTP map",
   "private": true,
   "main": "electron/main.cjs",
@@ -13,7 +13,8 @@
     "test:auto": "node test/browser.cjs --desktop",
     "test:electron": "node test/electron.cjs",
     "build:windows": "npm run assets && electron-builder --win --x64 --publish never",
-    "build:windows:zip": "npm run assets && electron-builder --win zip --x64 --publish never"
+    "build:windows:zip": "npm run assets && electron-builder --win zip --x64 --publish never",
+    "test:pixel": "node test/pixel-browser.cjs"
   },
   "keywords": [],
   "author": "Ethan Willingham",

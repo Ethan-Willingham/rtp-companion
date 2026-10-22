@@ -23,6 +23,7 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run test:browser
       - run: npm run test:auto
+      - run: npm run test:pixel
       - run: npm run test:electron
       - run: npm run build:windows
         env:

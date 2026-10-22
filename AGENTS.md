@@ -6,6 +6,8 @@ Standalone companion app, separate from the owner's portfolio. Read README.md an
 - No Minecraft mods, game-file reads, memory access, network interception, packet changes, anti-cheat evasion, input injection or automated commands.
 - Never upload pixels, coordinates or session histories. Public map requests contain no player coordinates.
 - Preserve the one-button Start tracking flow, automatic coordinate detection and manual crop fallback.
+- The owner keeps the normal small F3 text. Do not require or recommend increasing Minecraft GUI Scale to make tracking work. Read native pixel glyphs first and cross-check XYZ against Block when both rows are visible.
+- On tall windows, give the map the full horizontal width with setup above it. Start Follow off; updating the marker must not recenter the map unless the owner explicitly enables Follow.
 - Keep all six region labels, borders and current-region readout. Nether and End cannot use Overworld regions.
 - No emojis or em dashes in UI, docs or commit messages.
 - Do not claim zero ban risk or live Windows testing without doing it.
