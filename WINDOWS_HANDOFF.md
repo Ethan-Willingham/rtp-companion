@@ -58,4 +58,4 @@ Build updated installers with npm run build:windows. The app is unsigned; normal
 
 ## Live validation record
 
-Pending the owner's Windows PC. Fill after actual testing, not from synthetic checks or CI packaging.
+2026-10-22, Windows PC, Minecraft Java 26.3 vanilla: standalone 2.2.0 opened and captured the game, but the height-based tracking CSS shrank the map and small F3 glyphs produced stale or incorrect digits. Version 2.2.1 fills the map panel, uses a sidebar at wide window sizes, defaults to Follow, requests detailed high-resolution capture, increases discovery scaling, tightens row bounds, and rejects OCR below 70 percent confidence. Live capture and the reader preview were checked on the selected game window. At the observed 854 by 480 game rendering size, Block-row OCR confused 9 with 2 at 49 percent confidence. Those readings are now rejected; a full live-game accuracy pass with larger F3 text remains required. Increase Minecraft GUI Scale before relying on the marker. Synthetic browser, automatic OCR and Electron tests cover signed coordinates and tracking. No live RTP, mixed-DPI or exclusive-fullscreen validation is claimed.

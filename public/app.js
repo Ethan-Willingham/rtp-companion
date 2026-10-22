@@ -4,13 +4,14 @@ const {parseCoordinates, normalize, Tracker,findCoordinateLine}=RTPCore;
 const desktop=window.rtpDesktop;
 let tracker=new Tracker(), stream=null, worker=null, workerPromise=null, crop=null;
 let running=false, generation=0, timer=null, sampleMode=false, reading=false;
-let mapData=null, regions=null, bitmap=null, follow=false;
+let mapData=null, regions=null, bitmap=null, follow=true;
 let view={x:.5,z:.5,zoom:1}, drag=null, selection=null, selectionStart=null;
 const video=$('capture'), map=$('map'), ctx=map.getContext('2d');
 const shot=document.createElement('canvas'), shotCtx=shot.getContext('2d');
 const ocr=$('ocrPreview'), ocrCtx=ocr.getContext('2d',{willReadFrequently:true});
 let captureSize=null;
 let autoFind=false,unreadable=0;
+$('follow').textContent='Follow: on';
 if(desktop){
   $('connect').textContent='Start tracking';$('crop').textContent='Adjust coordinate row';
   document.querySelector('.setup>p').textContent='Open Minecraft Java, show F3 coordinates, then click Start tracking.';
@@ -37,7 +38,7 @@ async function initWorker() {
       errorHandler:e=>status(`Reader error: ${e.message||e}. Stop and reconnect to retry.`)
     });
     if (!running) { await w.terminate(); throw new Error('Capture stopped'); }
-    await w.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1'});
+    await w.setParameters({tessedit_pageseg_mode:'7',preserve_interword_spaces:'1',tessedit_char_whitelist:'0123456789-./ XYZBlock:[]',load_system_dawg:'0',load_freq_dawg:'0'});
     worker=w; return w;
   })();
   try { return await workerPromise; } finally { workerPromise=null; }
@@ -65,7 +66,8 @@ $('connect').onclick=async()=>{
       $('windowPicker').hidden=sources.length<2;
       await desktop.selectMinecraftWindow($('windowSelect').value);
     }
-    stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:5},audio:false});
+    stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:5,width:{ideal:7680},height:{ideal:4320},resizeMode:'none'},audio:false});
+    stream.getVideoTracks()[0].contentHint='detail';
     video.srcObject=stream; await video.play();
     stream.getVideoTracks()[0].addEventListener('ended',()=>stopCapture('Screen sharing ended. Select the Minecraft window to reconnect.'),{once:true});
     sampleMode=false; tracker=new Tracker(); updateReadout(); running=true;
@@ -121,8 +123,8 @@ $('cropDialog').addEventListener('close',()=>{
   if (running && (crop||autoFind)) { clearTimeout(timer); timer=setTimeout(readFrame,0); }
 });
 async function discoverRow(w){
-  const sourceWidth=Math.ceil(video.videoWidth*.85),sourceHeight=Math.ceil(video.videoHeight*.75);
-  const scale=Math.min(2,2400/sourceWidth);
+  const sourceWidth=Math.min(video.videoWidth,1200),sourceHeight=Math.ceil(video.videoHeight*.6);
+  const scale=Math.min(4,3600/sourceWidth);
   ocr.width=Math.round(sourceWidth*scale);ocr.height=Math.round(sourceHeight*scale);
   ocrCtx.imageSmoothingEnabled=false;ocrCtx.drawImage(video,0,0,sourceWidth,sourceHeight,0,0,ocr.width,ocr.height);
   const pixels=ocrCtx.getImageData(0,0,ocr.width,ocr.height);
@@ -149,11 +151,11 @@ async function readFrame() {
     if(autoFind){
       const {found,scale}=await discoverRow(w);
       if(!running||token!==generation||$('cropDialog').open)return;
-      if(!found||found.confidence<45){status('Show Minecraft F3 coordinates. Looking for the XYZ or Block row...');return;}
+      if(!found||found.confidence<70){status('Show F3 and increase Minecraft GUI Scale if its text is small. Looking for a clear XYZ or Block row...');return;}
       $('ocrText').textContent=found.text;
       if(found.bbox){
-        const b=found.bbox,x=Math.max(0,Math.floor(b.x0/scale)-6),y=Math.max(0,Math.floor(b.y0/scale)-4);
-        crop={x,y,w:Math.min(video.videoWidth-x,Math.ceil((b.x1-b.x0)/scale)+12),h:Math.min(video.videoHeight-y,Math.ceil((b.y1-b.y0)/scale)+8)};
+        const b=found.bbox,x=Math.max(0,Math.floor(b.x0/scale)-6),y=Math.max(0,Math.floor(b.y0/scale)-1);
+        crop={x,y,w:Math.min(video.videoWidth-x,Math.ceil((b.x1-b.x0)/scale)+60),h:Math.min(video.videoHeight-y,Math.ceil((b.y1-b.y0)/scale)+2)};
         autoFind=false;unreadable=0;
       }
       const confirmed=tracker.read(found.position,found.confidence);
@@ -161,9 +163,9 @@ async function readFrame() {
       status(confirmed?'Reading visible coordinates locally.':'Found the coordinate row. Confirming your position...');
       return;
     }
-    await w.setParameters({tessedit_pageseg_mode:'7'});
+    await w.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789-./ XYZBlock:[]'});
     // Scale bright Minecraft glyphs and remove the translucent debug background.
-    const scale=Math.max(2,Math.min(4,64/crop.h));
+    const scale=Math.max(2,Math.min(6,80/crop.h));
     const pad=16;
     ocr.width=Math.round(crop.w*scale)+pad*2;ocr.height=Math.round(crop.h*scale)+pad*2;
     ocrCtx.fillStyle='white';ocrCtx.fillRect(0,0,ocr.width,ocr.height);
@@ -180,14 +182,15 @@ async function readFrame() {
     if (!running || token!==generation || $('cropDialog').open) return;
     $('ocrText').textContent=`${data.text.trim()||'(no text)'}\nOCR confidence: ${Math.round(data.confidence)}%`;
     const p=parseCoordinates(data.text);
-    const result=tracker.read(p,data.confidence);
+    const confidence=data.confidence<70?0:data.confidence;
+    const result=tracker.read(p,confidence);
     if (result) {
       unreadable=0;
       sampleMode=false;document.body.classList.add('tracking');updateReadout();
       status(result.landing&&result.jump ? 'Large coordinate jump confirmed. Your map marker has moved.' : 'Reading visible coordinates locally. Keep the selected row visible.');
       if (follow) centerOnPlayer();draw();
-    } else if (!p || data.confidence<45) {
-      status('Cannot read the coordinate row. Show F3, or use Adjust coordinate row.');
+    } else if (!p || confidence<45) {
+      status('Coordinate text is too small or unclear. Increase Minecraft GUI Scale, keep F3 visible, or use Adjust coordinate row.');
       if(desktop&&++unreadable>=4){crop=null;autoFind=true;unreadable=0;tracker.pending=null;}
     }
     else status('Confirming coordinates with another reading...');
@@ -311,7 +314,7 @@ map.onpointermove=e=>{
 map.onpointerup=()=>{drag=null;};map.onpointercancel=()=>{drag=null;};
 $('demo').onclick=()=>{
   if(running){status('Stop screen capture before trying sample coordinates.');return;}
-  sampleMode=true;tracker=new Tracker();const now=Date.now();
+  sampleMode=true;follow=false;$('follow').textContent='Follow: off';tracker=new Tracker();const now=Date.now();
   for(const [i,p] of [{x:-85000,y:70,z:42000},{x:67000,y:64,z:-92000},{x:-140000,y:82,z:-31000}].entries()){
     tracker.read(p,99,now+i*1000);tracker.read(p,99,now+i*1000+600);
   }

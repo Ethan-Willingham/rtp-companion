@@ -9,7 +9,7 @@ The map labels US West, US East, EU West, EU Central, Asia and Oceania, with reg
 Download the Windows installer or portable ZIP from this repository's **Releases** page. The installer adds Start menu and desktop shortcuts. For the portable version, extract the entire ZIP and open **RTP Companion.exe**, keeping its other files beside it. Node and a separate browser are not needed.
 
 1. Open Minecraft Java in windowed or borderless mode beside the app.
-2. Press F3 so the XYZ or Block coordinate line is visible.
+2. Press F3 so the XYZ or Block coordinate line is visible. Increase Minecraft GUI Scale if the debug text is tiny; low-confidence readings are rejected.
 3. Click **Start tracking**. If multiple game windows are open, select the intended window and start again.
 4. Use `/rtp` normally. The app confirms readings before moving the marker. It never executes game commands.
 
@@ -17,7 +17,7 @@ Coordinates are found automatically. If needed, click **Adjust coordinate row** 
 
 The Windows app is unsigned. Release downloads include SHA-256 checksums. Follow your computer's normal security policy; do not disable security software to run it.
 
-**Validation:** Windows workflow checks use actual local OCR against synthetic screen content. Live capture, display scaling and graphics-driver behavior still need checking on a Windows PC. [WINDOWS_HANDOFF.md](WINDOWS_HANDOFF.md) gives Codex the exact next steps.
+**Validation:** Windows capture was checked on the owner's PC. Small F3 text produced incorrect OCR digits, so the reader now rejects low-confidence readings and asks for larger GUI text. Accurate tracking at the owner's larger GUI scale, mixed display scaling and graphics-driver behavior still need checking. Automated tests use actual local OCR against synthetic screen content. [WINDOWS_HANDOFF.md](WINDOWS_HANDOFF.md) gives Codex the exact next steps.
 
 ## Mac
 

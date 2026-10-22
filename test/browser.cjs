@@ -47,10 +47,25 @@ const desktop=process.argv.includes('--desktop');
   }
   await page.waitForFunction(()=>document.getElementById('x').textContent==='-85,001',null,{timeout:60000});
   assert.equal(await page.locator('#z').textContent(),'42,000');
+  const mapWidth=await page.locator('#map').evaluate(el=>el.clientWidth);
+  assert.ok(mapWidth>650, `Tracking map should fill the panel, got ${mapWidth}px`);
+  await page.setViewportSize({width:1150,height:900});
+  assert.ok(await page.locator('#map').evaluate(el=>el.clientWidth)>650);
+  await page.setViewportSize({width:760,height:1100});
   await page.evaluate(()=>window.drawTestCoordinates('67000.500','64.000','-92000.250'));
   await page.waitForFunction(()=>document.getElementById('x').textContent==='67,000',null,{timeout:30000});
   assert.equal(await page.locator('#z').textContent(),'-92,001');
   assert.equal(await page.locator('#history li').count(),2);
+  // Repeated readable text with poor OCR confidence must never move the marker.
+  await page.evaluate(()=>{
+    const recognize=worker.recognize.bind(worker);
+    worker.recognize=async(...args)=>{const result=await recognize(...args);result.data.confidence=49;return result;};
+    window.drawTestCoordinates('19812.300','-43.000','-224218.300');
+  });
+  await page.waitForTimeout(5000);
+  assert.equal(await page.locator('#x').textContent(),'67,000');
+  assert.equal(await page.locator('#z').textContent(),'-92,001');
+  assert.equal(await page.locator('#live').textContent(),'Coordinates stale');
   await page.evaluate(()=>window.drawTestCoordinates('hidden','',''));
   await page.waitForTimeout(5000);
   assert.equal(await page.locator('#live').textContent(),'Coordinates stale');

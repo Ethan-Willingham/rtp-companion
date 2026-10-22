@@ -32,7 +32,7 @@ app.whenReady().then(async()=>{
   });
   session.defaultSession.setPermissionRequestHandler((webContents,permission,callback)=>callback(webContents===window?.webContents&&permission==='display-capture'));
   session.defaultSession.setPermissionCheckHandler((webContents,permission,requestOrigin)=>webContents===window?.webContents&&requestOrigin===origin&&permission==='display-capture');
-  window=new BrowserWindow({title:'RTP Companion',width:720,height:950,minWidth:500,minHeight:650,backgroundColor:'#111b19',show:!smoke,
+  window=new BrowserWindow({title:'RTP Companion',width:1150,height:900,minWidth:500,minHeight:650,backgroundColor:'#111b19',show:!smoke,
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,backgroundThrottling:false}});
   Menu.setApplicationMenu(null);
   window.webContents.setWindowOpenHandler(({url})=>{

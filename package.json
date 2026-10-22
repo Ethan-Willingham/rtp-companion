@@ -1,6 +1,6 @@
 {
   "name": "donut-rtp-companion",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Local screen-only Minecraft coordinate reader and DonutSMP RTP map",
   "private": true,
   "main": "electron/main.cjs",
