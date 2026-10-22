@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RTP Companion</title><link rel="stylesheet" href="/style.css"><script defer src="/vendor/tesseract.min.js"></script><script defer src="/core.js"></script><script defer src="/regions.js"></script><script defer src="/app.js"></script></head>
+<body>
+<header><div><span class="eyebrow">SCREEN-ONLY / JAVA EDITION</span><h1>RTP Companion</h1></div><span class="badge" id="live">Not connected</span></header>
+<main>
+<section class="setup panel">
+ <p>Keep Minecraft and this window side by side. Show Java's <strong>F3</strong> coordinates (on some Macs, <strong>Fn + F3</strong>).</p>
+ <div class="buttons"><button id="connect" class="primary">1. Select Minecraft window</button><button id="crop" disabled>2. Select coordinate row</button><button id="stop" disabled>Stop</button></div>
+ <label id="windowPicker" hidden>Minecraft window <select id="windowSelect"></select></label>
+ <p id="status" role="status">Choose the Minecraft window in your browser's screen picker. No audio is captured.</p>
+ <details><summary>Setup and privacy</summary><p>Use Chrome or Edge in a separate window. Choose the Minecraft window, then drag a tight rectangle around the complete <code>XYZ: X / Y / Z</code> or <code>Block: X Y Z</code> line, including minus signs. Prefer XYZ. Keep coordinates visible while playing. Re-select the row after resizing Minecraft, changing its GUI scale, or changing the debug layout.</p><p>On macOS, your browser may need System Settings &gt; Privacy &amp; Security &gt; Screen &amp; System Audio Recording access. If the server hides coordinates, this program cannot recover them.</p><p>Screen pixels and coordinates stay in this browser. No Minecraft files, memory, mods, packets, or input are accessed. The local server only fetches the public Donut Auction map. Nothing is sent to Minecraft. External tools still need to follow the server's rules; zero ban risk cannot be promised.</p></details>
+ <div id="readout"><div><span>X</span><strong id="x">---</strong></div><div><span>Y</span><strong id="y">---</strong></div><div><span>Z</span><strong id="z">---</strong></div></div>
+ <p id="regionStatus">Region: waiting for coordinates</p>
+ <div class="row"><span id="freshness">Waiting for coordinates</span><label>Dimension <select id="dimension"><option value="overworld">Overworld</option><option value="nether">Nether</option><option value="end">End</option></select></label></div>
+ <details id="ocrDetails"><summary>Coordinate reader preview</summary><canvas id="ocrPreview" width="1" height="1"></canvas><p id="ocrText">No reading yet.</p></details>
+</section>
+<section class="panel map-panel">
+ <div class="map-head"><div><h2>Your position</h2><p id="mapStatus">Loading public RTP heatmap...</p></div><div class="buttons"><button id="zoomOut" aria-label="Zoom out">-</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="reset">World</button><button id="follow">Follow: off</button></div></div>
+ <div class="map-wrap"><canvas id="map" aria-label="RTP heatmap, north at top, X increases right, Z increases down"></canvas><span class="compass">-Z / NORTH</span><span id="hover">Move over the map for coordinates</span></div>
+ <div class="legend"><span class="gradient"></span><span>Fewer recorded RTPs</span><span>More recorded RTPs</span></div>
+ <p class="small">White ring: you. Small dots: your confirmed large jumps. Drag to pan, scroll to zoom. Dark areas mean fewer or no recorded landings, not a guarantee of safety.</p>
+ <p class="small">Map data: <a href="https://donut.auction/rtp-heatmap" target="_blank" rel="noreferrer">Donut Auction</a>. <span id="mapDate"></span> Overworld heatmap only; select the correct dimension manually after using a portal.</p>
+ <div class="buttons"><button id="reload">Refresh map</button><button id="demo">Try sample coordinates</button></div>
+</section>
+<section class="panel"><div class="map-head"><div><h2>Recent landings</h2><p>Jumps over 1,000 blocks are marked. The reader cannot tell a teleport from other fast travel.</p></div><button id="clear">Clear</button></div><ol id="history"><li>No landings yet. History stays in memory until you close or reload this page.</li></ol><button id="export">Export my landings</button></section>
+</main>
+<dialog id="cropDialog"><h2>Select the coordinate row</h2><p>Drag around one full XYZ or Block line. Include its label and every minus sign. Leave other F3 lines outside.</p><div id="cropArea"><canvas id="cropCanvas"></canvas></div><p id="cropHint">Drag a rectangle on the image.</p><div class="buttons"><button id="useCrop" disabled class="primary">Use this row</button><button id="cancelCrop">Cancel</button></div></dialog>
+<video id="capture" autoplay muted playsinline></video>
+</body></html>

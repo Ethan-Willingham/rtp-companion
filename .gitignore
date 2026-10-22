@@ -1,0 +1,13 @@
+node_modules/
+dist/
+public/vendor/
+test/output/
+test/failure.png
+*.app/
+*.dmg
+*.zip
+*.exe
+.DS_Store
+.env
+.env.*
+native/placeholder

@@ -1,0 +1,28 @@
+appId: local.ethan.rtpcompanion.windows
+productName: RTP Companion
+artifactName: RTP-Companion-${version}-Windows-${arch}.${ext}
+directories:
+  output: dist
+asar: true
+files:
+  - electron/**
+  - public/**
+  - server.cjs
+  - package.json
+  - LICENSE
+  - THIRD_PARTY.md
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  signExecutable: false
+  icon: build/icon.ico
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: RTP Companion
+  artifactName: RTP-Companion-${version}-Windows-Setup.${ext}
