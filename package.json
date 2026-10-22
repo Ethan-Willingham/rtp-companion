@@ -4,9 +4,6 @@
   "description": "Local screen-only Minecraft coordinate reader and DonutSMP RTP map",
   "private": true,
   "main": "electron/main.cjs",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "start": "npm run assets && electron .",
     "start:browser": "node server.cjs",
